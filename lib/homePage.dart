@@ -23,7 +23,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
   int _bpm = 0; // beats per minute
   double _rmssd = 0;
   int _fs = 60; // sampling frequency (fps)
-  int _windowLen = 60 * 20; // window length to display - 6 seconds
+  int _windowLen = 60 * 20; // window length to display - 20 seconds
   CameraImage _image; // store the last camera image
   double _avg; // store the average value during calculation
   DateTime _now; // store the now Datetime
