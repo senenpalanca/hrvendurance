@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:PPG/Palette.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock/wakelock.dart';
@@ -22,8 +23,8 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
   double _iconScale = 1;
   int _bpm = 0; // beats per minute
   double _rmssd = 0;
-  int _fs = 60; // sampling frequency (fps)
-  int _windowLen = 60 * 20; // window length to display - 20 seconds
+  int _fs = 30; // sampling frequency (fps)
+  int _windowLen = 30 * 20; // window length to display - 20 seconds
   CameraImage _image; // store the last camera image
   double _avg; // store the average value during calculation
   DateTime _now; // store the now Datetime
@@ -55,16 +56,31 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    String rmssdVal = "";
+    try{
+      rmssdVal = _rmssd.round().toString();
+    }catch(Exception){
+      print("ERROR: rmssd=${_rmssd}");
+      rmssdVal = "--";
+    }
     return Scaffold(
+      appBar: AppBar(
+        title: Text("HRVEndurance"),
+        backgroundColor: hrvEnduranceColor2,
+      ),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: <Widget>[
+
             Expanded(
                 flex: 1,
-                child: Row(
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
+                    SizedBox(height: 50,),
+                    Center(child: Text(!_toggled ? "Pulse para comenzar a medir" : "Midiendo...",style: TextStyle(fontSize: 22),),),
+                    /*
                     Expanded(
                       flex: 1,
                       child: Padding(
@@ -106,47 +122,79 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
                           ),
                         ),
                       ),
-                    ),
+                    ),*/
+
                     Expanded(
                       flex: 1,
                       child: Center(
-                          child: Column(
+                          child: Transform.scale(
+                            scale: _iconScale,
+                            child: IconButton(
+
+                              icon:
+                              Icon(_toggled ? Icons.favorite : Icons.favorite_border),
+                              color: hrvEnduranceColor2,
+                              iconSize: 128,
+                              onPressed: () {
+                                if (_toggled) {
+                                  _untoggle();
+                                } else {
+                                  _toggle();
+                                }
+                              },
+                            ),
+                          )),
+                    ),
+                  ],
+                )),
+
+
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: Center(
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: <Widget>[
                           Text(
-                            "Estimated RMSSD",
+                            "RMSSD",
                             style: TextStyle(fontSize: 18, color: Colors.grey),
                           ),
                           Text(
-                            _rmssd.toString(),//(_bpm > 30 && _bpm < 150 ? _bpm.toString() : "--"),
+                            rmssdVal,//(_bpm > 30 && _bpm < 150 ? _bpm.toString() : "--"),
                             style: TextStyle(
                                 fontSize: 32, fontWeight: FontWeight.bold),
                           ),
                         ],
-                      )),
+                      ),
                     ),
-                  ],
-                )),
-            Expanded(
-              flex: 1,
-              child: Center(
-                child: Transform.scale(
-                  scale: _iconScale,
-                  child: IconButton(
-                    icon:
-                        Icon(_toggled ? Icons.favorite : Icons.favorite_border),
-                    color: Colors.red,
-                    iconSize: 128,
-                    onPressed: () {
-                      if (_toggled) {
-                        _untoggle();
-                      } else {
-                        _toggle();
-                      }
-                    },
                   ),
-                ),
+                  
+                  Expanded(
+                    flex: 1,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: <Widget>[
+                          Text(
+                            "Pulsaciones por \nminuto",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
+                          Text(
+                            (_bpm > 30 && _bpm < 150 ? _bpm.toString() : "--"),
+                            style: TextStyle(
+                                fontSize: 32, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -157,7 +205,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
                     borderRadius: BorderRadius.all(
                       Radius.circular(18),
                     ),
-                    color: Colors.black),
+                    color: Color.fromRGBO(254, 252, 230, 1)),
                 child: Chart(_data),
               ),
             ),
@@ -189,7 +237,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
 
       // after is toggled
       _initTimer();
-      _updateBPM();
+      _update();
     });
   }
 
@@ -247,13 +295,8 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
     });
   }
 
-  void _updateBPM() async {
-    // Bear in mind that the method used to calculate the BPM is very rudimentar
-    // feel free to improve it :)
+  void _update() async {
 
-    // Since this function doesn't need to be so "exact" regarding the time it executes,
-    // I only used the a Future.delay to repeat it from time to time.
-    // Ofc you can also use a Timer object to time the callback of this function
     List<SensorValue> _values;
     double _avg;
     int _n;
@@ -265,7 +308,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
     int _previous;
     List<int> diffValues = [];
     while (_toggled) {
-      _values = List.from(_data); // create a copy of the current data array
+      _values = List.from(_data);
       _avg = 0;
       _n = _values.length;
 
@@ -291,13 +334,13 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
 
             /*
             CALCULAR BPM
-
+ */
             _counter++;
             _bpm += 60 *
                 1000 /
                 (_values[i].time.millisecondsSinceEpoch - _previous);
 
-             */
+
 
           }
           _previous = _values[i].time.millisecondsSinceEpoch;

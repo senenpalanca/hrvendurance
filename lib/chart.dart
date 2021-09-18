@@ -8,15 +8,24 @@ class Chart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return new charts.TimeSeriesChart([
+    
+    Color corporateColor = new Color.fromRGBO(254, 252, 230, 1);
+    return new charts.TimeSeriesChart(
+
+        [
       charts.Series<SensorValue, DateTime>(
         id: 'Values',
-        colorFn: (_, __) => charts.MaterialPalette.green.shadeDefault,
+        colorFn: (_, __) => charts.Color.fromHex(code: "#18A7AD"),
+        areaColorFn:  (_, __) => charts.Color.fromHex(code: "#FEFCE6"),
+        fillColorFn: (_, __) => charts.Color.fromHex(code: "#FEFCE6"),
+        patternColorFn: (_, __) => charts.Color.fromHex(code: "#FEFCE6"),
+
         domainFn: (SensorValue values, _) => values.time,
         measureFn: (SensorValue values, _) => values.value,
         data: _data,
       )
     ],
+
         animate: false,
         primaryMeasureAxis: charts.NumericAxisSpec(
           tickProviderSpec:
