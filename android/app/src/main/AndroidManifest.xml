@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.afonsoraposo.ppg">
+    package="com.senenpalanca.hrvendurance">
     <uses-feature
     android:name="android.hardware.camera"
     android:required="true"/>
@@ -13,7 +13,7 @@
          FlutterApplication and put your custom class here. -->
     <application
         android:name="io.flutter.app.FlutterApplication"
-        android:label="ppg"
+        android:label="HRVEndurance"
         android:icon="@mipmap/launcher_icon">
 
         <activity

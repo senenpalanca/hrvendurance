@@ -17,6 +17,7 @@ class HomePage extends StatefulWidget {
 class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
   bool _toggled = false; // toggle button value
   List<SensorValue> _data = []; // array to store the values
+  List<SensorValue> _finaldata = []; // array to store the values
   CameraController _controller;
   double _alpha = 0.3; // factor for the mean value
   AnimationController _animationController;
@@ -24,7 +25,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
   int _bpm = 0; // beats per minute
   double _rmssd = 0;
   int _fs = 30; // sampling frequency (fps)
-  int _windowLen = 30 * 20; // window length to display - 20 seconds
+  int _windowLen = 30 * 6; // window length to display - 20 seconds
   CameraImage _image; // store the last camera image
   double _avg; // store the average value during calculation
   DateTime _now; // store the now Datetime
@@ -65,7 +66,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
     }
     return Scaffold(
       appBar: AppBar(
-        title: Text("HRVEndurance"),
+        title: Text("HRV Endurance"),
         backgroundColor: hrvEnduranceColor2,
       ),
       backgroundColor: Colors.white,
@@ -190,6 +191,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
                             style: TextStyle(
                                 fontSize: 32, fontWeight: FontWeight.bold),
                           ),
+
                         ],
                       ),
                     ),
@@ -218,14 +220,21 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
   void _clearData() {
     // create array of 128 ~= 255/2
     _data.clear();
-    int now = DateTime.now().millisecondsSinceEpoch;
-    for (int i = 0; i < _windowLen; i++)
+    _finaldata.clear();
+    int now = DateTime
+        .now()
+        .millisecondsSinceEpoch;
+    for (int i = 0; i < _windowLen; i++) {
       _data.insert(
           0,
           SensorValue(
               DateTime.fromMillisecondsSinceEpoch(now - i * 1000 ~/ _fs), 128));
+      _finaldata.insert(
+          0,
+          SensorValue(
+              DateTime.fromMillisecondsSinceEpoch(now - i * 1000 ~/ _fs), 128));
+    }
   }
-
   void _toggle() {
     _clearData();
     _initController().then((onValue) {
@@ -238,10 +247,13 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
       // after is toggled
       _initTimer();
       _update();
+
+      //_update();
     });
   }
 
   void _untoggle() {
+    _getLogOfData();
     _disposeController();
     Wakelock.disable();
     _animationController?.stop();
@@ -292,10 +304,14 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
     }
     setState(() {
       _data.add(SensorValue(_now, 255 - _avg));
+      _finaldata.add(SensorValue(_now, 255 - _avg));
+
     });
   }
-
   void _update() async {
+    await Future.delayed(Duration(
+       seconds: 10));
+
 
     List<SensorValue> _values;
     double _avg;
@@ -307,8 +323,12 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
     int _counter;
     int _previous;
     List<int> diffValues = [];
+    List<DateTime> timestamps = [];
     while (_toggled) {
       _values = List.from(_data);
+
+
+
       _avg = 0;
       _n = _values.length;
 
@@ -317,40 +337,66 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
         _avg += value.value / _n;
         if (value.value > _m) _m = value.value;
       });
-      _threshold = (_m + _avg) / 2;
+      //_threshold = (_m + _avg) / 2;
+      _threshold = (_m*0.3 + _avg*0.7);
+
       _bpm = 0;
       _counter = 0;
       _previous = 0;
       for (int i = 1; i < _n; i++) {
         if (_values[i - 1].value < _threshold &&
             _values[i].value > _threshold) {
+
+          print("PULSACIÓN ENCONTRADA");
           if (_previous != 0) {
 
             //Eliminar valores anómalos:
             int _diff =  _values[i].time.millisecondsSinceEpoch - _previous;
-            if(_diff < 1200 && _diff > 350)
-              diffValues.add(_diff);
-            print("PREVIOUS: ${_previous}, NOW: ${_values[i].time.millisecondsSinceEpoch}",);
+            if(_diff < 1200 && _diff > 500){
 
-            /*
-            CALCULAR BPM
- */
+              timestamps.add(_values[i].time);
+              diffValues.add(_diff);
+            }
+
+
+            //print("PREVIOUS: ${_previous}, NOW: ${_values[i].time.millisecondsSinceEpoch}",);
+
+            /*CALCULAR BPM*/
             _counter++;
             _bpm += 60 *
                 1000 /
                 (_values[i].time.millisecondsSinceEpoch - _previous);
 
-
-
           }
           _previous = _values[i].time.millisecondsSinceEpoch;
 
-
-
         }
       }
+
+      //*TEST*//
+      String ret = "";
+
+      for(int i = 0; i<_data.length;i++){
+        ret += i.toString() + "," + _data[i].value.toString()+","+ (timestamps.contains(_data[i].time)?"1":"0")+"\n";
+      }
+      print(ret);
+      //END TEST
+
+
+
+      //BPM
+      if (_counter > 0) {
+        _bpm = _bpm / _counter;
+        setState(() {
+          _bpm = (1 - _alpha) * _bpm + _alpha * _bpm;
+          this._bpm = _bpm.toInt();
+          print(_bpm);
+        });
+      }
+
       _calculateRMSSD(diffValues);
       diffValues.clear();
+      timestamps.clear();
       /*
       if (_counter > 0) {
         _bpm = _bpm / _counter;
@@ -368,6 +414,10 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
   }
 
   void _calculateRMSSD(List<int> values) {
+    String diffs;
+    for(int j = 0; j<values.length; j++){
+      //diffs = values[j];
+    }
     print(values);
     double _sumatorio = 0;
     for(int i = 0; i<values.length-1;i++){
@@ -382,9 +432,25 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
 
       var rmssd = sqrt(x);
       setState(() {
-        _rmssd = rmssd;
+        print("RMSSD: ${rmssd}");
+        if(rmssd > 20 && rmssd < 150){
+          //_rmssd = (rmssd + _rmssd)/2;
+          _rmssd = 0.3*rmssd + 0.7*_rmssd;
+        }
+
       });
     }
 
   }
+
+  void _getLogOfData() {
+    String ret = "";
+
+    for(int i = 0; i<_finaldata.length;i++){
+      ret += i.toString() + "," + _finaldata[i].value.toString()+"\n";
+    }
+    print(ret);
+  }
 }
+
+
