@@ -13,7 +13,10 @@ dependencies:
   charts_flutter: ^0.11.0
   wakelock: ^0.1.4+1
   camera: 0.7.0+4
-
+  scidart: ^0.0.2-dev.6
+  numdart: ^1.0.0
+  percent_indicator: "^2.1.7+2"
+  iirjdart: ^0.0.1
 
 dev_dependencies:
   flutter_test:
