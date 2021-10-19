@@ -48,7 +48,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
 
     _animationController2 = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 40),
+      duration: const Duration(seconds: 60),
     )..addListener(() {
       setState(() {});
     });
@@ -185,9 +185,9 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
 
       // after is toggled
       _initTimer();
-      _untoggleAfterSeconds(40);
-
+      _untoggleAfterSeconds(60);
       //_update();
+
     });
   }
 
@@ -261,7 +261,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
     List<SensorValue> peaks = [];
 
     // _finaldata.sublist(180,_finaldata.length);
-    for(int i = 220; i< _finaldata.length;i++){
+    for(int i = 400; i< _finaldata.length;i++){
       peaks.add(_finaldata[i]);
     }
     Navigator.push(
