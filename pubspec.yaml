@@ -17,6 +17,7 @@ dependencies:
   numdart: ^1.0.0
   percent_indicator: "^2.1.7+2"
   iirjdart: ^0.0.1
+  vibrate:
 
 dev_dependencies:
   flutter_test:

@@ -3,10 +3,12 @@ import 'dart:math';
 
 import 'package:PPG/Functions/functions.dart';
 import 'package:PPG/Palette.dart';
+import 'package:PPG/bottom-advert.dart';
 import 'package:PPG/detail-page.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:scidart/numdart.dart';
+import 'package:vibrate/vibrate.dart';
 import 'package:wakelock/wakelock.dart';
 import 'chart.dart';
 
@@ -17,8 +19,10 @@ class HomePage extends StatefulWidget {
   }
 }
 
-class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, TickerProviderStateMixin  {
+class HomePageView extends State<HomePage>
+    with SingleTickerProviderStateMixin, TickerProviderStateMixin {
   bool _toggled = false; // toggle button value
+  bool _measuring = false;
   List<SensorValue> _data = []; // array to store the values
   List<SensorValue> _finaldata = []; // array to store the values
   CameraController _controller;
@@ -48,10 +52,10 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
 
     _animationController2 = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 60),
+      duration: const Duration(seconds: 70),
     )..addListener(() {
-      setState(() {});
-    });
+        setState(() {});
+      });
 
     super.initState();
   }
@@ -70,7 +74,6 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         title: Text("HRV Endurance"),
@@ -80,16 +83,25 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
       body: SafeArea(
         child: Column(
           children: <Widget>[
-
             Expanded(
                 flex: 1,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    SizedBox(height: 50,),
-                    Center(child: Text(!_toggled ? "Pulse para comenzar a medir" : "Midiendo...",style: TextStyle(fontSize: 22),),),
-
-
+                    SizedBox(
+                      height: 50,
+                    ),
+                    Center(
+                      child: Text(
+                        !_toggled
+                            ? "Pulse para comenzar a medir"
+                            : _measuring ? "Midiendo..." : "Calibrando...",
+                        style: TextStyle(fontSize: 22),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 30,
+                    ),
                     Expanded(
                       flex: 1,
                       child: Stack(
@@ -104,38 +116,34 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
                                     strokeWidth: 7,
                                     value: _animationController2.value,
                                     semanticsLabel: 'Linear progress indicator',
-                                    valueColor: AlwaysStoppedAnimation<Color>(hrvEnduranceColor2)
-                                ),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        hrvEnduranceColor2)),
                               ),
                             ),
                           ),
                           Center(
                               child: Transform.scale(
-                                scale: _iconScale,
-                                child: IconButton(
-
-                                  icon:
-                                  Icon(_toggled ? Icons.favorite : Icons.favorite_border),
-                                  color: hrvEnduranceColor2,
-                                  iconSize: 128,
-                                  onPressed: () {
-                                    if (_toggled) {
-                                      _untoggle();
-                                    } else {
-                                      _toggle();
-                                    }
-                                  },
-                                ),
-                              )),
-
+                            scale: _iconScale,
+                            child: IconButton(
+                              icon: Icon(_toggled
+                                  ? Icons.favorite
+                                  : Icons.favorite_border),
+                              color: hrvEnduranceColor2,
+                              iconSize: 128,
+                              onPressed: () {
+                                if (_toggled) {
+                                  _untoggle();
+                                } else {
+                                  _toggle();
+                                }
+                              },
+                            ),
+                          )),
                         ],
                       ),
                     ),
                   ],
                 )),
-
-
-
             Expanded(
               flex: 1,
               child: Container(
@@ -145,7 +153,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
                       Radius.circular(18),
                     ),
                     color: Color.fromRGBO(254, 252, 230, 1)),
-                child: Chart(_data,[]),
+                child: Chart(_data, []),
               ),
             ),
           ],
@@ -158,9 +166,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
     // create array of 128 ~= 255/2
     _data.clear();
     _finaldata.clear();
-    int now = DateTime
-        .now()
-        .millisecondsSinceEpoch;
+    int now = DateTime.now().millisecondsSinceEpoch;
     for (int i = 0; i < _windowLen; i++) {
       _data.insert(
           0,
@@ -174,20 +180,44 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
   }
 
   void _toggle() {
-    _clearData();
-    _initController().then((onValue) {
-      Wakelock.enable();
-      _animationController?.repeat(reverse: true);
-      _animationController2.repeat(reverse: false);
-      setState(() {
-        _toggled = true;
+
+    showModalBottomSheet(
+        elevation: 10,
+        backgroundColor: Colors.white,
+        context: context,
+        builder: (ctx) {
+          waitAndDimiss() async {
+            await Future.delayed(Duration(seconds: 10));
+            Navigator.pop(ctx, false);
+          }
+
+          ;
+          waitAndDimiss();
+          return BottomAdvert();
+        }).then((value) {
+      _clearData();
+      waitAdjustingToMeasuring() async {
+        await Future.delayed(Duration(seconds: 10));
+       setState(() {
+         _measuring = true;
+       });
+      }
+      _initController().then((onValue) {
+        Wakelock.enable();
+        _animationController?.repeat(reverse: true);
+        _animationController2.repeat(reverse: false);
+        setState(() {
+          _toggled = true;
+          waitAdjustingToMeasuring();
+        });
+
+        // after is toggled
+        _initTimer();
+        _untoggleAfterSeconds(70);
+
       });
 
-      // after is toggled
-      _initTimer();
-      _untoggleAfterSeconds(60);
       //_update();
-
     });
   }
 
@@ -200,7 +230,9 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
     _animationController2.value = 0.0;
     setState(() {
       _toggled = false;
+      _measuring = false;
     });
+    Vibrate.vibrate();
     processData();
   }
 
@@ -246,32 +278,29 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin, 
     setState(() {
       _data.add(SensorValue(_now, 255 - _avg));
       _finaldata.add(SensorValue(_now, 255 - _avg));
-
     });
   }
 
   void _untoggleAfterSeconds(int i) async {
-    await Future.delayed(Duration(
-        seconds: i));
+    await Future.delayed(Duration(seconds: i));
     _untoggle();
   }
 
-  void processData() {
 
+
+  void processData() {
     List<SensorValue> peaks = [];
 
     // _finaldata.sublist(180,_finaldata.length);
-    for(int i = 400; i< _finaldata.length;i++){
+    for (int i = 300; i < _finaldata.length; i++) {
       peaks.add(_finaldata[i]);
     }
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => DetailPage(data: peaks,)),
+      MaterialPageRoute(
+          builder: (context) => DetailPage(
+                data: peaks,
+              )),
     );
   }
-
-
-
 }
-
-
