@@ -10,7 +10,6 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^0.1.2
-  charts_flutter: ^0.11.0
   wakelock: ^0.1.4+1
   camera: 0.7.0+4
   scidart: ^0.0.2-dev.6
@@ -18,6 +17,12 @@ dependencies:
   percent_indicator: "^2.1.7+2"
   iirjdart: ^0.0.1
   vibrate:
+
+dependency_overrides:
+  charts_flutter:
+    git:
+      url: https://github.com/google/charts
+      path: charts_flutter
 
 dev_dependencies:
   flutter_test:
