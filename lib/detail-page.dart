@@ -169,9 +169,6 @@ class _DetailPageState extends State<DetailPage> {
     List<Peak> peaks = res.maxtab;
     List<Peak> minPeaks = res.mintab;
     peaks = _timeFilter(peaks, minPeaks);
-
-
-
     setState(() {
       _peaks = peaks;
     });
@@ -299,7 +296,6 @@ class _DetailPageState extends State<DetailPage> {
 
     _orderAndRemove(values);
 
-
     double _sumatorio = 0;
     int errors = 0;
     for(int i = 1; i<values.length;i++){
@@ -311,25 +307,19 @@ class _DetailPageState extends State<DetailPage> {
       _sumatorio += resta*resta;
     }
     //Errors management
-    if (errors > 2 ){
-
+    if (errors > 1 ){
       setState(() {
         numErrors = errors;
       });
     }
     //End Errors management
-
-
     print("SUMATORIO: ${_sumatorio}");
     if(values.length>0){
       double x = _sumatorio/(values.length-1);
-
       var rmssd = sqrt(x);
-
       setState(() {
-        RMSSD = rmssd.toInt();
+        RMSSD = rmssd?.toInt()??0;
       });
-
       var logrmssd = log(rmssd);
       return logrmssd*10;
     }
