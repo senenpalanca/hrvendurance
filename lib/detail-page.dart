@@ -20,8 +20,8 @@ class _DetailPageState extends State<DetailPage> {
   List<Peak> _peaks = [];
   int HR = 0;
   int HRV = 0;
-
-  bool someError = false;
+  int RMSSD = 0;
+  int numErrors = -1;
   @override
   Widget build(BuildContext context) {
 
@@ -59,25 +59,25 @@ class _DetailPageState extends State<DetailPage> {
           Row(
             children: [
               Expanded(
-              flex: 1,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    Text(
-                      "RMSSD",
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                    Text(
-                      HRV.toString(),//(_bpm > 30 && _bpm < 150 ? _bpm.toString() : "--"),
-                      style: TextStyle(
-                          fontSize: 32, fontWeight: FontWeight.bold),
-                    ),
-                  ],
+                flex: 1,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        "HRV",
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                      Text(
+                        HRV.toString(),//(_bpm > 30 && _bpm < 150 ? _bpm.toString() : "--"),
+                        style: TextStyle(
+                            fontSize: 32, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
               Expanded(
                 flex: 1,
@@ -100,10 +100,61 @@ class _DetailPageState extends State<DetailPage> {
                     ],
                   ),
                 ),
-              ),],
+              ),
+              numErrors>-1 ? Expanded(
+                flex: 1,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        "Número de errores",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                      Text(
+                        numErrors.toString(),//(_bpm > 30 && _bpm < 150 ? _bpm.toString() : "--"),
+                        style: TextStyle(
+                            fontSize: 32, fontWeight: FontWeight.bold),
+                      ),
+
+                    ],
+                  ),
+                ),
+              ) : Container()],
           ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Divider(),
+          ),
+          Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        "RMSSD",
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                      Text(
+                        RMSSD.toString(),//(_bpm > 30 && _bpm < 150 ? _bpm.toString() : "--"),
+                        style: TextStyle(
+                            fontSize: 32, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+],
+          ),
+
           SizedBox(height: 30,),
-          someError ? Center(child: Text("Datos erróneos. Por favor, repite la medición", style: TextStyle(color: Colors.red, fontSize: 20),textAlign:TextAlign.center,)): Container(),
+          numErrors>-1 ? Center(child: Text("Datos erróneos. Por favor, repite la medición", style: TextStyle(color: Colors.red, fontSize: 20),textAlign:TextAlign.center,)): Container(),
 
 
         ],
@@ -238,7 +289,7 @@ class _DetailPageState extends State<DetailPage> {
 
 
         setState(() {
-          someError = true;
+          numErrors = 0;
         });
 
     }
@@ -260,10 +311,10 @@ class _DetailPageState extends State<DetailPage> {
       _sumatorio += resta*resta;
     }
     //Errors management
-    if (errors > 0 ){
+    if (errors > 2 ){
 
       setState(() {
-        someError = true;
+        numErrors = errors;
       });
     }
     //End Errors management
@@ -275,6 +326,10 @@ class _DetailPageState extends State<DetailPage> {
 
       var rmssd = sqrt(x);
 
+      setState(() {
+        RMSSD = rmssd.toInt();
+      });
+
       var logrmssd = log(rmssd);
       return logrmssd*10;
     }
@@ -282,24 +337,6 @@ class _DetailPageState extends State<DetailPage> {
 
   }
 
-  double _calculateRMSSD2(List<int> values) {
-
-    double _sumatorio = 0;
-    for(int i = 0; i<values.length-1;i++){
-
-      int resta = values[i]-values[i+1];
-
-      _sumatorio += resta*resta;
-    }
-
-    if(values.length>0){
-      double x = _sumatorio/(values.length-1);
-
-      var rmssd = sqrt(x);
-      return rmssd;
-    }
-
-  }
 
   List<SensorValue> _lowPassFilter(List<SensorValue> dataToFilter) {
 
