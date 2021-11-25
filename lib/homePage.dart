@@ -7,10 +7,12 @@ import 'package:PPG/bottom-advert.dart';
 import 'package:PPG/detail-page.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:scidart/numdart.dart';
 import 'package:vibrate/vibrate.dart';
 import 'package:wakelock/wakelock.dart';
 import 'chart.dart';
+
 
 class HomePage extends StatefulWidget {
   @override
@@ -52,7 +54,7 @@ class HomePageView extends State<HomePage>
 
     _animationController2 = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 70),
+      duration: const Duration(seconds: 130),
     )..addListener(() {
         setState(() {});
       });
@@ -72,8 +74,12 @@ class HomePageView extends State<HomePage>
     super.dispose();
   }
 
+
   @override
   Widget build(BuildContext context) {
+
+
+
     return Scaffold(
       appBar: AppBar(
         title: Text("HRV Endurance"),
@@ -139,6 +145,7 @@ class HomePageView extends State<HomePage>
                               },
                             ),
                           )),
+
                         ],
                       ),
                     ),
@@ -213,7 +220,7 @@ class HomePageView extends State<HomePage>
 
         // after is toggled
         _initTimer();
-        _untoggleAfterSeconds(70);
+        _untoggleAfterSeconds(130);
 
       });
 

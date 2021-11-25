@@ -4,6 +4,7 @@ import 'package:PPG/Functions/functions.dart';
 import 'package:PPG/Palette.dart';
 import 'package:PPG/chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:iirjdart/butterworth.dart';
 
 
@@ -18,6 +19,7 @@ class DetailPage extends StatefulWidget {
 
 class _DetailPageState extends State<DetailPage> {
   List<Peak> _peaks = [];
+  String _diffs = "";
   int HR = 0;
   int HRV = 0;
   int RMSSD = 0;
@@ -26,7 +28,7 @@ class _DetailPageState extends State<DetailPage> {
   Widget build(BuildContext context) {
 
     //print("Numero de datos ${widget.data.length}");
-    //print("1. ${_calculateRMSSD([1005,998,1003,1001])}");
+    //print("1. ${_calculateRMSSD([845,745 ,812 ,732 ])}");
     ///print("2. ${_calculateRMSSD([])}");
     calculatePeaks();
 
@@ -155,7 +157,10 @@ class _DetailPageState extends State<DetailPage> {
 
           SizedBox(height: 30,),
           numErrors>-1 ? Center(child: Text("Datos erróneos. Por favor, repite la medición", style: TextStyle(color: Colors.red, fontSize: 20),textAlign:TextAlign.center,)): Container(),
-
+          Center(child:  OutlinedButton(
+            onPressed: () => _SendEmail(_diffs),
+            child: Text("Enviar Email con Peaks"),
+          ),)
 
         ],
       ),
@@ -168,7 +173,7 @@ class _DetailPageState extends State<DetailPage> {
     PeakResult res =  peakDetector(_data, 0.40);
     List<Peak> peaks = res.maxtab;
     List<Peak> minPeaks = res.mintab;
-    peaks = _timeFilter(peaks, minPeaks);
+   // peaks = _timeFilter(peaks, minPeaks);
     setState(() {
       _peaks = peaks;
     });
@@ -277,7 +282,8 @@ class _DetailPageState extends State<DetailPage> {
       for(int x = 0; x < diffs.length; x++){
         resExcel += "${diffs[x]},";
       }
-
+      print(resExcel);
+      _diffs = resExcel;
       var _hrv = _calculateRMSSD(diffs).toInt();
       setState(() {
         HRV = _hrv;
@@ -350,12 +356,30 @@ class _DetailPageState extends State<DetailPage> {
       var x = y.toInt();
       values2 = values2.sublist(x,values.length-x);
     }
+
     print("Numero val1: ${values.length}, Numero val2: ${values2.length}");
-    print("values2: "+values2.toString());
+
     for(int i = 0; i<values.length;i++) {
       if(!values2.contains(values[i])) {
         values.removeAt(i);
       }
     }
+    print("values: "+values.toString());
   }
+
+  _SendEmail(String data) async {
+    final Email email = Email(
+      body: data ,
+      subject: 'HRV Endurance - Logs ${DateTime.now()}',
+      recipients: ['senenpalanca@gmail.com'],
+      cc: ['senenpalanca@gmail.com'],
+      bcc: ['senenpalanca@gmail.com'],
+      //attachmentPaths: ['/path/to/attachment.zip'],
+      isHTML: false,
+    );
+
+    await FlutterEmailSender.send(email);
+
+  }
+
 }
